@@ -8,6 +8,9 @@ This tool isn’t just a simple uploader. It provides a complete workflow for:
 - **Managing configurations** and tokens through a built-in Swing-based GUI  
 - **Handling mod metadata** such as game versions, release types, changelogs, and dependency relations
 
+<br>
+<img width="600" alt="Screenshot_1" src="https://github.com/user-attachments/assets/4d642cb2-3e7e-4e2e-b1ad-0ee8be364fd8" />
+
 ## Important Information
 
 - **Multi-Loader Setup:**  
