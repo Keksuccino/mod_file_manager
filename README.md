@@ -45,8 +45,9 @@ This tool isn’t just a simple uploader. It provides a complete workflow for:
    - Many placeholders (e.g., `%version%`, `%mc_version_range%`, `%loaders%`) are available in file renaming and display templates.
 
 3. **Preparing Mod Files:**
+   - Make sure the output folder is **EMPTY** before preparing mod files, since overriding JAR files via the tool caused some problems in the past.
    - Click **Prepare Mod Files**. The tool will rename and copy your build jars from the specified build directory to the output directory.
-   - Ensure that the mod version is set either directly or via a text file.
+   - After preparing the files, it is recommended to check the output folder to make sure everything worked correctly.
 
 4. **Uploading:**
    - You can choose to upload only to CurseForge, only to Modrinth, or both.  
