@@ -1,0 +1,60 @@
+
+plugins {
+    id 'java'
+}
+
+group 'de.keksuccino'
+version '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+
+    //implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'commons-codec:commons-codec:1.11'
+    implementation 'commons-io:commons-io:2.6'
+    implementation 'commons-logging:commons-logging:1.2'
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'com.google.guava:guava:28.1-jre'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation 'org.apache.httpcomponents:httpcore:4.4.13'
+    implementation 'org.apache.httpcomponents:httpmime:4.5.13'
+    implementation 'org.json:json:20211205'
+    implementation 'net.lingala.zip4j:zip4j:2.10.0'
+
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'de.keksuccino.modmanager.views.MainView'
+        )
+    }
+
+    zip64 = true
+
+    from {
+        exclude('META-INF/LICENSE.txt')
+        exclude('META-INF/NOTICE.txt')
+        exclude('META-INF/DEPENDENCIES')
+        exclude('META-INF/LICENSE')
+        exclude('META-INF/NOTICE')
+        exclude('META-INF/maven/commons-io/')
+        // Exclude all html, png, css, and js files from the JAR.
+        exclude('**/*.html')
+        exclude('**/*.png')
+        exclude('**/*.css')
+        exclude('**/*.js')
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
