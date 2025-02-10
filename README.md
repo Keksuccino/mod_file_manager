@@ -1,6 +1,6 @@
 # Minecraft Mod Upload Tool
 
-Welcome to the repository for the tool that prepares and uploads my Minecraft mods. Originally a personal experiment, the code remains a bit messy and hardcoded in parts—but feel free to explore, learn from, or even contribute to it.
+Welcome to the repository for the tool that prepares and uploads my Minecraft mods. Originally a personal experiment, the code remains a bit messy and hardcoded in parts, but feel free to explore, learn from, or even contribute to it.
 
 This tool isn’t just a simple uploader. It provides a complete workflow for:
 - **Preparing mod files** (renaming build JARs and copying them to an output folder)  
