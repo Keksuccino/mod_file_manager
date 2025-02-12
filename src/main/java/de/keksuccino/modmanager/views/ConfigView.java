@@ -60,6 +60,10 @@ public class ConfigView extends JFrame {
 
     private final Config config;
 
+    // New fields for game versions handling
+    private boolean gameVersionsLoaded = false;
+    private JButton saveButton; // now an instance field
+
     public ConfigView() {
         // Use existing configuration from ModManager.
         this.config = ModManager.config;
@@ -80,7 +84,8 @@ public class ConfigView extends JFrame {
 
         // Bottom button panel including Save and Cancel buttons.
         JPanel buttonPanel = new JPanel();
-        JButton saveButton = new JButton("Save");
+        saveButton = new JButton("Save");
+        saveButton.setEnabled(false); // disable until game versions finish loading
         JButton cancelButton = new JButton("Cancel");
         buttonPanel.add(saveButton);
         buttonPanel.add(cancelButton);
@@ -88,6 +93,9 @@ public class ConfigView extends JFrame {
 
         saveButton.addActionListener(e -> saveConfig());
         cancelButton.addActionListener(e -> dispose());
+
+        // Call loadGameVersions() now—after saveButton is created.
+        loadGameVersions();
     }
 
     private JPanel createGeneralPanel() {
@@ -115,6 +123,7 @@ public class ConfigView extends JFrame {
             String modVersion = ModVersionExtractor.getModVersion();
             modVersionField.setText(modVersion);
         } catch (Exception e) {
+            // If gradle.properties is missing, we show an error message.
             modVersionField.setText("Error: Unable to extract mod version");
             modVersionField.setForeground(Color.RED);
         }
@@ -171,7 +180,9 @@ public class ConfigView extends JFrame {
         panel.add(gameVersionsPanel);
 
         releaseTypeCombo = new JComboBox<>(new String[]{"alpha", "beta", "release"});
+        releaseTypeCombo.setSelectedItem(config.getOrDefault("release_type", "alpha").toString());
         changelogTypeCombo = new JComboBox<>(new String[]{"text", "html", "markdown"});
+        changelogTypeCombo.setSelectedItem(config.getOrDefault("changelog_type", "text").toString());
         String savedChangelog = config.getOrDefault("changelog", "").replace("%n%", "\n");
         changelogTextArea = new JTextArea(savedChangelog, 5, 30);
         changelogTextArea.setLineWrap(true);
@@ -184,8 +195,6 @@ public class ConfigView extends JFrame {
         panel.add(createRow("Changelog Type:", changelogTypeCombo));
         panel.add(createTextAreaRow("Changelog:", changelogScrollPane));
         panel.add(createRow("Sources File Description:", devFileDescriptionField));
-
-        loadGameVersions();
 
         return panel;
     }
@@ -279,6 +288,8 @@ public class ConfigView extends JFrame {
     private void loadGameVersions() {
         refreshVersionsButton.setEnabled(false);
         gameVersionsModel.clear();
+        saveButton.setEnabled(false);  // disable Save while loading
+
         SwingWorker<List<String>, Void> worker = new SwingWorker<List<String>, Void>() {
             @Override
             protected List<String> doInBackground() throws Exception {
@@ -296,6 +307,7 @@ public class ConfigView extends JFrame {
             protected void done() {
                 try {
                     List<String> versionNames = get();
+                    gameVersionsLoaded = true;
                     String selectedVersionsConfig = config.getOrDefault("game_versions", "").toString().trim();
                     String[] selectedVersions = selectedVersionsConfig.isEmpty() ? new String[0] : selectedVersionsConfig.split("\\s*,\\s*");
                     for (String name : versionNames) {
@@ -310,9 +322,13 @@ public class ConfigView extends JFrame {
                         gameVersionsModel.addElement(item);
                     }
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(ConfigView.this, "Failed to load game versions: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    gameVersionsLoaded = false;
+                    JOptionPane.showMessageDialog(ConfigView.this,
+                            "Failed to load game versions: " + ex.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
                 }
                 refreshVersionsButton.setEnabled(true);
+                saveButton.setEnabled(true);  // re-enable Save after load attempt
             }
         };
         worker.execute();
@@ -342,18 +358,21 @@ public class ConfigView extends JFrame {
             config.setValue("upload_from_folder", uploadFromFolderField.getText());
             config.setValue("mod_relations", modRelationsField.getText());
 
-            StringBuilder versionsValue = new StringBuilder();
-            for (int i = 0; i < gameVersionsModel.getSize(); i++) {
-                CheckListItem item = gameVersionsModel.getElementAt(i);
-                if(item.isSelected()) {
-                    String processed = processVersionString(item.getLabel());
-                    if(versionsValue.length() > 0) {
-                        versionsValue.append(",");
+            // Only update game_versions if the load succeeded.
+            if (gameVersionsLoaded) {
+                StringBuilder versionsValue = new StringBuilder();
+                for (int i = 0; i < gameVersionsModel.getSize(); i++) {
+                    CheckListItem item = gameVersionsModel.getElementAt(i);
+                    if(item.isSelected()) {
+                        String processed = processVersionString(item.getLabel());
+                        if(versionsValue.length() > 0) {
+                            versionsValue.append(",");
+                        }
+                        versionsValue.append(processed);
                     }
-                    versionsValue.append(processed);
                 }
+                config.setValue("game_versions", versionsValue.toString());
             }
-            config.setValue("game_versions", versionsValue.toString());
             config.setValue("release_type", (String) releaseTypeCombo.getSelectedItem());
             config.setValue("changelog_type", (String) changelogTypeCombo.getSelectedItem());
             config.setValue("changelog", changelogTextArea.getText().replace("\n", "%n%"));
@@ -372,7 +391,13 @@ public class ConfigView extends JFrame {
             config.setValue("modrinth_featured", modrinthFeaturedCheck.isSelected());
 
             config.syncConfig();
-            JOptionPane.showMessageDialog(this, "Configuration saved successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            // Show a different popup message if game versions were not updated
+            if (gameVersionsLoaded) {
+                JOptionPane.showMessageDialog(this, "Configuration saved successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Configuration saved successfully, but game versions were not updated because the game versions list failed to load.", "Partial Success", JOptionPane.INFORMATION_MESSAGE);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Failed to save configuration: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -420,5 +445,4 @@ public class ConfigView extends JFrame {
             return this;
         }
     }
-
 }
